@@ -12,6 +12,7 @@ public class AppUser : Entity
     public UserType UserType { get; private set; }
     public List<ProfessionalRole> ProfessionalRoles { get; private set; } = [];
     public bool IsActive { get; private set; }
+    public string? PasswordHash { get; private set; }
 
     private AppUser() { }
 
@@ -63,6 +64,15 @@ public class AppUser : Entity
 
         FullName = fullName.Trim();
         Phone = phone?.Trim();
+        Touch();
+    }
+
+    public void UpdatePassword(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new DomainException("Password hash cannot be empty.");
+
+        PasswordHash = passwordHash;
         Touch();
     }
 
