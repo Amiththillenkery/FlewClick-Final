@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FlewClick.Api/FlewClick.Api.csproj" />
+    <Project Path="src/FlewClick.Application/FlewClick.Application.csproj" />
+    <Project Path="src/FlewClick.Domain/FlewClick.Domain.csproj" />
+    <Project Path="src/FlewClick.Infrastructure/FlewClick.Infrastructure.csproj" />
+  </Folder>
+</Solution>
