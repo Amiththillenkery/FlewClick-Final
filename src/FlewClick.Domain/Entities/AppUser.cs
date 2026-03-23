@@ -10,7 +10,7 @@ public class AppUser : Entity
     public string Email { get; private set; } = string.Empty;
     public string? Phone { get; private set; }
     public UserType UserType { get; private set; }
-    public ProfessionalRole? ProfessionalRole { get; private set; }
+    public List<ProfessionalRole> ProfessionalRoles { get; private set; } = [];
     public bool IsActive { get; private set; }
 
     private AppUser() { }
@@ -25,7 +25,7 @@ public class AppUser : Entity
             Email = email.Trim().ToLowerInvariant(),
             Phone = phone?.Trim(),
             UserType = UserType.User,
-            ProfessionalRole = null,
+            ProfessionalRoles = [],
             IsActive = true
         };
     }
@@ -33,10 +33,13 @@ public class AppUser : Entity
     public static AppUser CreateProfessionalUser(
         string fullName,
         string email,
-        ProfessionalRole professionalRole,
+        List<ProfessionalRole> professionalRoles,
         string? phone = null)
     {
         ValidateBasicFields(fullName, email);
+
+        if (professionalRoles.Count == 0)
+            throw new DomainException("At least one professional role is required.");
 
         return new AppUser
         {
@@ -44,10 +47,14 @@ public class AppUser : Entity
             Email = email.Trim().ToLowerInvariant(),
             Phone = phone?.Trim(),
             UserType = UserType.ProfessionalUser,
-            ProfessionalRole = professionalRole,
+            ProfessionalRoles = professionalRoles.Distinct().ToList(),
             IsActive = true
         };
     }
+
+    public bool HasRole(ProfessionalRole role) => ProfessionalRoles.Contains(role);
+
+    public bool HasAnyRole(params ProfessionalRole[] roles) => roles.Any(r => ProfessionalRoles.Contains(r));
 
     public void UpdateProfile(string fullName, string? phone)
     {
@@ -59,19 +66,34 @@ public class AppUser : Entity
         Touch();
     }
 
-    public void ChangeProfessionalRole(ProfessionalRole role)
+    public void AddProfessionalRole(ProfessionalRole role)
     {
         if (UserType != UserType.ProfessionalUser)
-            throw new DomainException("Only professional users can have a professional role.");
+            throw new DomainException("Only professional users can have professional roles.");
 
-        ProfessionalRole = role;
+        if (!ProfessionalRoles.Contains(role))
+        {
+            ProfessionalRoles.Add(role);
+            Touch();
+        }
+    }
+
+    public void RemoveProfessionalRole(ProfessionalRole role)
+    {
+        if (ProfessionalRoles.Count <= 1)
+            throw new DomainException("A professional user must have at least one role.");
+
+        ProfessionalRoles.Remove(role);
         Touch();
     }
 
-    public void PromoteToProfessional(ProfessionalRole role)
+    public void PromoteToProfessional(List<ProfessionalRole> roles)
     {
+        if (roles.Count == 0)
+            throw new DomainException("At least one professional role is required.");
+
         UserType = UserType.ProfessionalUser;
-        ProfessionalRole = role;
+        ProfessionalRoles = roles.Distinct().ToList();
         Touch();
     }
 

@@ -44,7 +44,7 @@ public class AddRentalEquipmentHandler(
         var user = await userRepository.GetByIdAsync(profile.AppUserId, ct)
             ?? throw new EntityNotFoundException("AppUser", profile.AppUserId);
 
-        if (user.ProfessionalRole != ProfessionalRole.DigitalRental)
+        if (!user.HasRole(ProfessionalRole.DigitalRental))
             throw new DomainException("Rental equipment is only for Digital Rental professionals.");
 
         var equipment = RentalEquipment.Create(

@@ -39,7 +39,7 @@ public class ConfigureEditingHandler(
         var user = await userRepository.GetByIdAsync(profile.AppUserId, ct)
             ?? throw new EntityNotFoundException("AppUser", profile.AppUserId);
 
-        if (user.ProfessionalRole != ProfessionalRole.Editor)
+        if (!user.HasRole(ProfessionalRole.Editor))
             throw new DomainException("Editing configuration is only for Editor professionals.");
 
         var existing = await configRepository.GetByProfileIdAsync(request.ProfileId, ct);

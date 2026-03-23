@@ -25,7 +25,7 @@ public class AppUserRepository(FlewClickDbContext context) : IAppUserRepository
 
     public async Task<IReadOnlyList<AppUser>> GetByProfessionalRoleAsync(ProfessionalRole role, CancellationToken ct = default) =>
         await context.AppUsers
-            .Where(u => u.UserType == UserType.ProfessionalUser && u.ProfessionalRole == role)
+            .Where(u => u.UserType == UserType.ProfessionalUser && u.ProfessionalRoles.Contains(role))
             .OrderBy(u => u.FullName)
             .ToListAsync(ct);
 

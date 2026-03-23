@@ -42,7 +42,7 @@ public class ConfigureDroneHandler(
         var user = await userRepository.GetByIdAsync(profile.AppUserId, ct)
             ?? throw new EntityNotFoundException("AppUser", profile.AppUserId);
 
-        if (user.ProfessionalRole != ProfessionalRole.DroneOwner)
+        if (!user.HasRole(ProfessionalRole.DroneOwner))
             throw new DomainException("Drone configuration is only for Drone Owner professionals.");
 
         var existing = await configRepository.GetByProfileIdAsync(request.ProfileId, ct);

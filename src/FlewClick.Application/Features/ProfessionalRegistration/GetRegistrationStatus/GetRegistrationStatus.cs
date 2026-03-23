@@ -27,24 +27,28 @@ public class GetRegistrationStatusHandler(
 
         var profileComplete = profile.Bio is not null || profile.Location is not null;
 
-        var configComplete = user.ProfessionalRole switch
+        var configStatus = new Dictionary<ProfessionalRole, bool>();
+        foreach (var role in user.ProfessionalRoles)
         {
-            ProfessionalRole.PhotographerVideographer =>
-                await photographyRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.Editor =>
-                await editingRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.DroneOwner =>
-                await droneRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.DigitalRental =>
-                (await rentalRepo.GetByProfileIdAsync(profile.Id, ct)).Count > 0,
-            _ => false
-        };
+            configStatus[role] = role switch
+            {
+                ProfessionalRole.Photographer or ProfessionalRole.Videographer =>
+                    await photographyRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.Editor =>
+                    await editingRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.DroneOwner =>
+                    await droneRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.DigitalRental =>
+                    (await rentalRepo.GetByProfileIdAsync(profile.Id, ct)).Count > 0,
+                _ => false
+            };
+        }
 
         return new RegistrationStatusDto(
             profile.Id,
-            user.ProfessionalRole!.Value,
+            user.ProfessionalRoles,
             profileComplete,
-            configComplete,
+            configStatus,
             profile.IsRegistrationComplete);
     }
 }

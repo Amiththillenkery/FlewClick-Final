@@ -11,7 +11,7 @@ public static class AppUserMapper
             user.Email,
             user.Phone,
             user.UserType,
-            user.ProfessionalRole,
+            user.ProfessionalRoles,
             user.IsActive,
             user.CreatedAtUtc,
             user.UpdatedAtUtc

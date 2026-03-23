@@ -21,8 +21,12 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<FlewClickD
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? "Host=localhost;Port=5432;Database=flewclick;Username=postgres;Password=postgres";
 
+        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+
         var optionsBuilder = new DbContextOptionsBuilder<FlewClickDbContext>();
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseNpgsql(dataSource);
 
         return new FlewClickDbContext(optionsBuilder.Options);
     }

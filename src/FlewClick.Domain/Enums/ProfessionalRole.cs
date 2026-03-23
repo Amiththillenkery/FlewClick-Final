@@ -2,8 +2,9 @@ namespace FlewClick.Domain.Enums;
 
 public enum ProfessionalRole
 {
-    PhotographerVideographer = 0,
-    Editor = 1,
-    DroneOwner = 2,
-    DigitalRental = 3
+    Photographer = 0,
+    Videographer = 1,
+    Editor = 2,
+    DroneOwner = 3,
+    DigitalRental = 4
 }

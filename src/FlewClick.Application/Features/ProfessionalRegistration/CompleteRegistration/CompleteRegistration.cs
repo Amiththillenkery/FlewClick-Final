@@ -27,21 +27,29 @@ public class CompleteRegistrationHandler(
         var user = await userRepository.GetByIdAsync(profile.AppUserId, ct)
             ?? throw new EntityNotFoundException("AppUser", profile.AppUserId);
 
-        var configExists = user.ProfessionalRole switch
-        {
-            ProfessionalRole.PhotographerVideographer =>
-                await photographyRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.Editor =>
-                await editingRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.DroneOwner =>
-                await droneRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
-            ProfessionalRole.DigitalRental =>
-                (await rentalRepo.GetByProfileIdAsync(profile.Id, ct)).Count > 0,
-            _ => throw new DomainException("Unknown professional role.")
-        };
+        var missingConfigs = new List<string>();
 
-        if (!configExists)
-            throw new DomainException($"Professional configuration for {user.ProfessionalRole} must be completed before finishing registration.");
+        foreach (var role in user.ProfessionalRoles)
+        {
+            var configured = role switch
+            {
+                ProfessionalRole.Photographer or ProfessionalRole.Videographer =>
+                    await photographyRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.Editor =>
+                    await editingRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.DroneOwner =>
+                    await droneRepo.GetByProfileIdAsync(profile.Id, ct) is not null,
+                ProfessionalRole.DigitalRental =>
+                    (await rentalRepo.GetByProfileIdAsync(profile.Id, ct)).Count > 0,
+                _ => throw new DomainException($"Unknown professional role: {role}.")
+            };
+
+            if (!configured)
+                missingConfigs.Add(role.ToString());
+        }
+
+        if (missingConfigs.Count > 0)
+            throw new DomainException($"Configuration for the following roles must be completed: {string.Join(", ", missingConfigs)}.");
 
         profile.MarkRegistrationComplete();
         await profileRepository.UpdateAsync(profile, ct);

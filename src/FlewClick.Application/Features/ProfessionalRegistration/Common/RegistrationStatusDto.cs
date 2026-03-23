@@ -4,8 +4,8 @@ namespace FlewClick.Application.Features.ProfessionalRegistration.Common;
 
 public record RegistrationStatusDto(
     Guid ProfileId,
-    ProfessionalRole Role,
+    List<ProfessionalRole> Roles,
     bool ProfileComplete,
-    bool ConfigComplete,
+    Dictionary<ProfessionalRole, bool> ConfigStatus,
     bool IsRegistrationComplete
 );

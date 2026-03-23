@@ -8,7 +8,7 @@ public record AppUserDto(
     string Email,
     string? Phone,
     UserType UserType,
-    ProfessionalRole? ProfessionalRole,
+    List<ProfessionalRole> ProfessionalRoles,
     bool IsActive,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc

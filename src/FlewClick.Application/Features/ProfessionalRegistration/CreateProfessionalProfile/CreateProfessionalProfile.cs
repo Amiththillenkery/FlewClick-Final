@@ -12,7 +12,7 @@ public record CreateProfessionalProfileCommand(
     string FullName,
     string Email,
     string? Phone,
-    ProfessionalRole ProfessionalRole,
+    List<ProfessionalRole> ProfessionalRoles,
     string? Bio,
     string? Location,
     int? YearsOfExperience,
@@ -27,7 +27,8 @@ public class CreateProfessionalProfileValidator : AbstractValidator<CreateProfes
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(150);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(254);
         RuleFor(x => x.Phone).MaximumLength(20).When(x => x.Phone is not null);
-        RuleFor(x => x.ProfessionalRole).IsInEnum();
+        RuleFor(x => x.ProfessionalRoles).NotEmpty().WithMessage("At least one professional role is required.");
+        RuleForEach(x => x.ProfessionalRoles).IsInEnum();
         RuleFor(x => x.Bio).MaximumLength(1000).When(x => x.Bio is not null);
         RuleFor(x => x.Location).MaximumLength(200).When(x => x.Location is not null);
         RuleFor(x => x.YearsOfExperience).GreaterThanOrEqualTo(0).When(x => x.YearsOfExperience.HasValue);
@@ -48,7 +49,7 @@ public class CreateProfessionalProfileHandler(
             throw new DomainException($"A user with email '{request.Email}' already exists.");
 
         var user = AppUser.CreateProfessionalUser(
-            request.FullName, request.Email, request.ProfessionalRole, request.Phone);
+            request.FullName, request.Email, request.ProfessionalRoles, request.Phone);
         await userRepository.AddAsync(user, ct);
 
         var profile = ProfessionalProfile.Create(

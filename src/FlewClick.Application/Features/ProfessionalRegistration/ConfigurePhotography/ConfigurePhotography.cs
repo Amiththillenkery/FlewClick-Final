@@ -41,8 +41,8 @@ public class ConfigurePhotographyHandler(
         var user = await userRepository.GetByIdAsync(profile.AppUserId, ct)
             ?? throw new EntityNotFoundException("AppUser", profile.AppUserId);
 
-        if (user.ProfessionalRole != ProfessionalRole.PhotographerVideographer)
-            throw new DomainException("Photography configuration is only for Photographer/Videographer professionals.");
+        if (!user.HasAnyRole(ProfessionalRole.Photographer, ProfessionalRole.Videographer))
+            throw new DomainException("Photography configuration is only for Photographer or Videographer professionals.");
 
         var existing = await configRepository.GetByProfileIdAsync(request.ProfileId, ct);
         if (existing is not null)
