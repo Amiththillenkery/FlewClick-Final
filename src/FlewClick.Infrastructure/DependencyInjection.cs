@@ -18,6 +18,11 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddScoped<IAppUserRepository, AppUserRepository>();
+        services.AddScoped<IProfessionalProfileRepository, ProfessionalProfileRepository>();
+        services.AddScoped<IPhotographyConfigRepository, PhotographyConfigRepository>();
+        services.AddScoped<IEditingConfigRepository, EditingConfigRepository>();
+        services.AddScoped<IDroneConfigRepository, DroneConfigRepository>();
+        services.AddScoped<IRentalEquipmentRepository, RentalEquipmentRepository>();
 
         return services;
     }
