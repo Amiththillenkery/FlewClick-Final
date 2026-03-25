@@ -8,7 +8,10 @@ namespace FlewClick.Infrastructure.Repositories;
 public class PackageRepository(FlewClickDbContext context) : IPackageRepository
 {
     public async Task<Package?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        await context.Packages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        await context.Packages
+            .Include(p => p.Deliverables)
+            .Include(p => p.Pricing)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<IReadOnlyList<Package>> GetByProfileIdAsync(Guid profileId, CancellationToken ct = default) =>
         await context.Packages

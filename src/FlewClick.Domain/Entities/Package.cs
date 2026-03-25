@@ -53,4 +53,8 @@ public class Package : Entity
 
     public void Activate() { IsActive = true; Touch(); }
     public void Deactivate() { IsActive = false; Touch(); }
+
+    // Navigation Properties
+    public virtual ICollection<PackageDeliverable> Deliverables { get; private set; } = new List<PackageDeliverable>();
+    public virtual PackagePricing? Pricing { get; private set; }
 }

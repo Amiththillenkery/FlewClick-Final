@@ -12,9 +12,9 @@ public class CreateProfessionalProfileEndpoint : IEndpointGroup
         app.MapPost("/api/registration/professional/profile", async (IMediator mediator, CreateProfileRequest request) =>
             {
                 var result = await mediator.Send(new CreateProfessionalProfileCommand(
-                    request.FullName, request.Email, request.Phone, request.ProfessionalRoles,
-                    request.Bio, request.Location, request.YearsOfExperience,
-                    request.HourlyRate, request.PortfolioUrl));
+                    request.FullName, request.Email, request.Phone, request.Password,
+                    request.ProfessionalRoles, request.Bio, request.Location,
+                    request.YearsOfExperience, request.HourlyRate, request.PortfolioUrl));
                 return Results.Created($"/api/registration/professional/{result.Id}/status", result);
             })
             .WithName("CreateProfessionalProfile")
@@ -28,6 +28,7 @@ public record CreateProfileRequest(
     string FullName,
     string Email,
     string? Phone,
+    string Password,
     List<ProfessionalRole> ProfessionalRoles,
     string? Bio,
     string? Location,

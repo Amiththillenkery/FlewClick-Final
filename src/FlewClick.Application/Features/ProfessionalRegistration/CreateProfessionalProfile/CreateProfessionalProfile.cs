@@ -12,6 +12,7 @@ public record CreateProfessionalProfileCommand(
     string FullName,
     string Email,
     string? Phone,
+    string Password,
     List<ProfessionalRole> ProfessionalRoles,
     string? Bio,
     string? Location,
@@ -27,6 +28,14 @@ public class CreateProfessionalProfileValidator : AbstractValidator<CreateProfes
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(150);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(254);
         RuleFor(x => x.Phone).MaximumLength(20).When(x => x.Phone is not null);
+        RuleFor(x => x.Password)
+            .NotEmpty()
+            .MinimumLength(8)
+            .MaximumLength(128)
+            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+            .Matches(@"\d").WithMessage("Password must contain at least one digit.")
+            .Matches(@"[^\w\s]").WithMessage("Password must contain at least one special character.");
         RuleFor(x => x.ProfessionalRoles).NotEmpty().WithMessage("At least one professional role is required.");
         RuleForEach(x => x.ProfessionalRoles).IsInEnum();
         RuleFor(x => x.Bio).MaximumLength(1000).When(x => x.Bio is not null);
@@ -39,7 +48,8 @@ public class CreateProfessionalProfileValidator : AbstractValidator<CreateProfes
 
 public class CreateProfessionalProfileHandler(
     IAppUserRepository userRepository,
-    IProfessionalProfileRepository profileRepository)
+    IProfessionalProfileRepository profileRepository,
+    IPasswordHasher passwordHasher)
     : IRequestHandler<CreateProfessionalProfileCommand, ProfessionalProfileDto>
 {
     public async Task<ProfessionalProfileDto> Handle(CreateProfessionalProfileCommand request, CancellationToken ct)
@@ -50,6 +60,10 @@ public class CreateProfessionalProfileHandler(
 
         var user = AppUser.CreateProfessionalUser(
             request.FullName, request.Email, request.ProfessionalRoles, request.Phone);
+
+        var hash = passwordHasher.Hash(request.Password);
+        user.UpdatePassword(hash);
+
         await userRepository.AddAsync(user, ct);
 
         var profile = ProfessionalProfile.Create(

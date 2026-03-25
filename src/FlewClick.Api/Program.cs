@@ -1,12 +1,53 @@
+using System.Text;
 using FlewClick.Api.Endpoints;
+using FlewClick.Api.Hubs;
 using FlewClick.Application;
 using FlewClick.Domain.Exceptions;
 using FlewClick.Infrastructure;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "FlewClick-Dev-Secret-Key-Change-In-Production-256bit";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "FlewClick",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "FlewClick",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -21,8 +62,13 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+app.UseCors();
+
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FlewClick API v1"));
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
@@ -60,5 +106,6 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
 app.MapHealthChecks("/healthz");
 app.MapEndpointGroups();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

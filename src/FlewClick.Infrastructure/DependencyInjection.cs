@@ -1,6 +1,8 @@
 using FlewClick.Application.Interfaces;
+using FlewClick.Infrastructure.ExternalServices;
 using FlewClick.Infrastructure.Persistence;
 using FlewClick.Infrastructure.Repositories;
+using FlewClick.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +38,31 @@ public static class DependencyInjection
         services.AddScoped<IRentalProductRepository, RentalProductRepository>();
         services.AddScoped<IRentalProductImageRepository, RentalProductImageRepository>();
         services.AddScoped<IRentalProductPricingRepository, RentalProductPricingRepository>();
+
+        services.AddScoped<IInstagramConnectionRepository, InstagramConnectionRepository>();
+        services.AddScoped<IPortfolioItemRepository, PortfolioItemRepository>();
+
+        services.AddHttpClient<IInstagramApiClient, InstagramApiClient>();
+
+        services.AddScoped<IConsumerRepository, ConsumerRepository>();
+        services.AddScoped<IOtpVerificationRepository, OtpVerificationRepository>();
+        services.AddScoped<ISavedProfessionalRepository, SavedProfessionalRepository>();
+        services.AddScoped<IBrowseRepository, BrowseRepository>();
+
+        services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
+        services.AddScoped<IAgreementRepository, AgreementRepository>();
+        services.AddScoped<IAgreementDeliverableRepository, AgreementDeliverableRepository>();
+        services.AddScoped<IPlatformFeePaymentRepository, PlatformFeePaymentRepository>();
+        services.AddScoped<IBookingStatusHistoryRepository, BookingStatusHistoryRepository>();
+        services.AddScoped<IConversationRepository, ConversationRepository>();
+        services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+        services.AddScoped<ISmsService, MockSmsService>();
+        services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IRazorpayService, MockRazorpayService>();
 
         return services;
     }

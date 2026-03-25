@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# App secrets (Instagram credentials, etc.)
+appsettings.Development.json
