@@ -13,6 +13,9 @@ public class ConsumerRepository(FlewClickDbContext context) : IConsumerRepositor
     public async Task<Consumer?> GetByPhoneAsync(string phone, CancellationToken ct = default) =>
         await context.Consumers.FirstOrDefaultAsync(c => c.Phone == phone, ct);
 
+    public async Task<Consumer?> GetByEmailAsync(string email, CancellationToken ct = default) =>
+        await context.Consumers.FirstOrDefaultAsync(c => c.Email == email, ct);
+
     public async Task AddAsync(Consumer consumer, CancellationToken ct = default)
     {
         await context.Consumers.AddAsync(consumer, ct);

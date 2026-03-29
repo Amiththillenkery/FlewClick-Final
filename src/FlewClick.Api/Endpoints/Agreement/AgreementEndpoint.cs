@@ -76,7 +76,8 @@ public class AgreementEndpoint : IEndpointGroup
 
         app.MapPost("/api/bookings/{bookingId:guid}/agreement/request-revision", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId, RequestRevisionBody body) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 await mediator.Send(new RequestRevisionCommand(bookingId, consumerId, body.RevisionNotes));
                 return Results.NoContent();
@@ -106,7 +107,8 @@ public class AgreementEndpoint : IEndpointGroup
 
         app.MapPost("/api/bookings/{bookingId:guid}/agreement/accept", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new AcceptAgreementCommand(bookingId, consumerId));
                 return Results.Ok(result);

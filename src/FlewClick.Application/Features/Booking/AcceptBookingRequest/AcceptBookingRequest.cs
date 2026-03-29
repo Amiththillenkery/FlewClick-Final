@@ -24,7 +24,8 @@ public class AcceptBookingRequestHandler(
     IBookingRequestRepository bookingRepository,
     IBookingStatusHistoryRepository historyRepository,
     IProfessionalProfileRepository profileRepository,
-    IAppUserRepository userRepository)
+    IAppUserRepository userRepository,
+    IConversationRepository conversationRepository)
     : IRequestHandler<AcceptBookingRequestCommand, BookingDto>
 {
     public async Task<BookingDto> Handle(AcceptBookingRequestCommand request, CancellationToken ct)
@@ -56,6 +57,18 @@ public class AcceptBookingRequestHandler(
 
         await historyRepository.AddAsync(history, ct);
 
+        await EnsureConversationAsync(booking, ct);
+
         return BookingMapper.ToDto(booking);
+    }
+
+    private async Task EnsureConversationAsync(BookingRequest booking, CancellationToken ct)
+    {
+        var existing = await conversationRepository.GetByBookingIdAsync(booking.Id, ct);
+        if (existing is not null)
+            return;
+
+        var conversation = Conversation.Create(booking.Id, booking.ConsumerId, booking.ProfessionalProfileId);
+        await conversationRepository.AddAsync(conversation, ct);
     }
 }

@@ -33,7 +33,8 @@ public class BookingEndpoint : IEndpointGroup
     {
         app.MapPost("/api/bookings", async (IMediator mediator, ClaimsPrincipal user, CreateBookingRequestBody body) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new CreateBookingRequestCommand(
                     consumerId,
@@ -50,7 +51,8 @@ public class BookingEndpoint : IEndpointGroup
 
         app.MapGet("/api/bookings/my", async (IMediator mediator, ClaimsPrincipal user) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new GetConsumerBookingsQuery(consumerId));
                 return Results.Ok(result);

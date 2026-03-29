@@ -12,7 +12,9 @@ public class ShortlistEndpoint : IEndpointGroup
     {
         app.MapPost("/api/shortlist/{profileId:guid}", async (IMediator mediator, ClaimsPrincipal user, Guid profileId) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(
+                    user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 await mediator.Send(new SaveProfessionalCommand(consumerId, profileId));
                 return Results.Created($"/api/shortlist/{profileId}", null);
@@ -23,7 +25,9 @@ public class ShortlistEndpoint : IEndpointGroup
 
         app.MapDelete("/api/shortlist/{profileId:guid}", async (IMediator mediator, ClaimsPrincipal user, Guid profileId) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(
+                    user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 await mediator.Send(new RemoveSavedProfessionalCommand(consumerId, profileId));
                 return Results.NoContent();
@@ -34,7 +38,9 @@ public class ShortlistEndpoint : IEndpointGroup
 
         app.MapGet("/api/shortlist", async (IMediator mediator, ClaimsPrincipal user) =>
             {
-                var consumerId = Guid.Parse(user.FindFirstValue("sub")
+                var consumerId = Guid.Parse(
+                    user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new GetSavedProfessionalsQuery(consumerId));
                 return Results.Ok(result);

@@ -314,73 +314,87 @@ Connect Instagram, sync posts as portfolio items, and manage visibility/ordering
 
 ---
 
-### Feature 5: Consumer Authentication (OTP + JWT)
+### Feature 5: Consumer Authentication (Password + JWT + Refresh Token)
 
-Register and login as a consumer using mobile number OTP verification. JWT tokens are returned after successful verification.
+Password-based authentication for consumers with short-lived JWT access tokens (15 min) and long-lived refresh tokens (30 days). Same pattern as professional auth.
 
-| Step | Method | Endpoint | Description |
-|------|--------|----------|-------------|
-| 1 | `POST` | `/api/auth/register` | Send registration OTP to phone |
-| 2 | `POST` | `/api/auth/verify-registration` | Verify OTP, create consumer, return JWT |
-| 3 | `POST` | `/api/auth/login` | Send login OTP to phone |
-| 4 | `POST` | `/api/auth/verify-login` | Verify OTP, return JWT |
-| 5 | `GET` | `/api/auth/me` | Get logged-in consumer profile (requires JWT) |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/consumer/auth/register` | None | Register with phone + password |
+| `POST` | `/api/consumer/auth/login` | None | Login with phone + password |
+| `POST` | `/api/consumer/auth/refresh` | None | Rotate refresh token, get new access token |
+| `POST` | `/api/consumer/auth/revoke` | JWT | Revoke refresh token (logout) |
+| `GET` | `/api/consumer/auth/me` | JWT | Get current consumer profile |
 
-> **Note:** SMS is currently mocked -- OTP codes are logged to the console. Check server logs for the OTP.
-
-**Step 1 request body:**
+**Register request:**
 
 ```json
 {
   "phone": "+919876543210",
-  "fullName": "John Consumer"
+  "fullName": "John Consumer",
+  "password": "SecureP@ss123",
+  "email": "john@example.com"
 }
 ```
 
-**Step 2 request body:**
+**Register response (201):**
 
 ```json
 {
-  "phone": "+919876543210",
-  "otp": "123456",
-  "fullName": "John Consumer"
-}
-```
-
-**Step 3 request body:**
-
-```json
-{
-  "phone": "+919876543210"
-}
-```
-
-**Step 4 request body:**
-
-```json
-{
-  "phone": "+919876543210",
-  "otp": "654321"
-}
-```
-
-**Step 2 & 4 response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "base64-random-token...",
+  "expiresInSeconds": 900,
   "consumer": {
-    "id": "{{consumerId}}",
+    "id": "guid",
     "phone": "+919876543210",
     "fullName": "John Consumer",
-    "email": null,
+    "email": "john@example.com",
     "isPhoneVerified": true,
     "isActive": true,
-    "lastLoginAt": "2026-03-25T10:00:00Z",
-    "createdAtUtc": "2026-03-25T09:55:00Z"
+    "lastLoginAt": "2026-03-26T10:00:00Z",
+    "createdAtUtc": "2026-03-26T10:00:00Z"
   }
 }
 ```
+
+**Login request:**
+
+```json
+{
+  "phone": "+919876543210",
+  "password": "SecureP@ss123"
+}
+```
+
+**Login response (200):** Same shape as register response.
+
+**Refresh token request:**
+
+```json
+{
+  "refreshToken": "base64-random-token..."
+}
+```
+
+**Refresh token response (200):**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...(new)",
+  "refreshToken": "base64-random-token...(new)",
+  "expiresInSeconds": 900
+}
+```
+
+**Revoke token request (logout):**
+
+```json
+{
+  "refreshToken": "base64-random-token..."
+}
+```
+
+**Token flow:** Register/Login -> receive accessToken + refreshToken -> use accessToken as Bearer header -> refresh when expired -> revoke on logout
 
 ---
 

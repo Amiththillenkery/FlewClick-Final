@@ -1,44 +1,62 @@
+using FlewClick.Application.Features.ConsumerAuth.Common;
 using FlewClick.Application.Interfaces;
 using FlewClick.Domain.Entities;
-using FlewClick.Domain.Enums;
 using FlewClick.Domain.Exceptions;
 using FluentValidation;
 using MediatR;
 
 namespace FlewClick.Application.Features.ConsumerAuth.LoginConsumer;
 
-public record LoginConsumerCommand(string Phone) : IRequest<LoginConsumerResponse>;
-
-public record LoginConsumerResponse(string Message);
+public record LoginConsumerCommand(string Phone, string Password) : IRequest<ConsumerAuthTokenResponse>;
 
 public class LoginConsumerValidator : AbstractValidator<LoginConsumerCommand>
 {
     public LoginConsumerValidator()
     {
         RuleFor(x => x.Phone).NotEmpty().MinimumLength(10).MaximumLength(15);
+        RuleFor(x => x.Password).NotEmpty();
     }
 }
 
 public class LoginConsumerHandler(
     IConsumerRepository consumerRepository,
-    IOtpVerificationRepository otpRepository,
-    ISmsService smsService)
-    : IRequestHandler<LoginConsumerCommand, LoginConsumerResponse>
+    IPasswordHasher passwordHasher,
+    IJwtService jwtService,
+    IRefreshTokenRepository refreshTokenRepository)
+    : IRequestHandler<LoginConsumerCommand, ConsumerAuthTokenResponse>
 {
-    public async Task<LoginConsumerResponse> Handle(LoginConsumerCommand request, CancellationToken ct)
+    private const int AccessTokenExpiryMinutes = 15;
+    private const int RefreshTokenExpiryDays = 30;
+
+    public async Task<ConsumerAuthTokenResponse> Handle(LoginConsumerCommand request, CancellationToken ct)
     {
         var consumer = await consumerRepository.GetByPhoneAsync(request.Phone, ct)
-            ?? throw new DomainException("No account found with this phone number. Please register first.");
+            ?? throw new DomainException("Invalid phone number or password.");
 
         if (!consumer.IsActive)
-            throw new DomainException("This account has been deactivated.");
+            throw new DomainException("Your account has been deactivated. Contact support.");
 
-        var code = Random.Shared.Next(100000, 999999).ToString();
-        var otp = OtpVerification.Create(request.Phone, code, OtpPurpose.Login);
+        if (string.IsNullOrEmpty(consumer.PasswordHash))
+            throw new DomainException("Password has not been set. Please register again.");
 
-        await otpRepository.AddAsync(otp, ct);
-        await smsService.SendOtpAsync(request.Phone, code, ct);
+        if (!passwordHasher.Verify(request.Password, consumer.PasswordHash))
+            throw new DomainException("Invalid phone number or password.");
 
-        return new LoginConsumerResponse("OTP sent successfully. Verify to login.");
+        consumer.MarkLoggedIn();
+        await consumerRepository.UpdateAsync(consumer, ct);
+
+        var accessToken = jwtService.GenerateConsumerAccessToken(
+            consumer.Id, consumer.Phone, consumer.FullName, consumer.Email);
+
+        var refreshToken = RefreshToken.Create(
+            consumer.Id, DateTime.UtcNow.AddDays(RefreshTokenExpiryDays));
+        await refreshTokenRepository.AddAsync(refreshToken, ct);
+
+        return new ConsumerAuthTokenResponse(
+            accessToken,
+            refreshToken.Token,
+            AccessTokenExpiryMinutes * 60,
+            ConsumerMapper.ToDto(consumer)
+        );
     }
 }

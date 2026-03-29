@@ -15,3 +15,16 @@ public record AuthResponseDto(
     string Token,
     ConsumerDto Consumer
 );
+
+public record ConsumerAuthTokenResponse(
+    string AccessToken,
+    string RefreshToken,
+    int ExpiresInSeconds,
+    ConsumerDto Consumer
+);
+
+public record ConsumerTokenRefreshResponse(
+    string AccessToken,
+    string RefreshToken,
+    int ExpiresInSeconds
+);

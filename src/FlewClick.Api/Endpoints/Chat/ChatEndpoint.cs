@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FlewClick.Application.Features.Chat.GetConversation;
+using FlewClick.Application.Features.Chat.GetInbox;
 using FlewClick.Application.Features.Chat.GetMessages;
 using FlewClick.Application.Features.Chat.MarkMessagesRead;
 using FlewClick.Application.Features.Chat.SendMessage;
@@ -14,14 +15,29 @@ public class ChatEndpoint : IEndpointGroup
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/chat/{bookingId:guid}", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId) =>
+            app.MapGet("/api/chat/{bookingId:guid}", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId) =>
             {
-                var requesterId = Guid.Parse(user.FindFirstValue("sub")
+                var requesterId = Guid.Parse(user.FindFirstValue("profileId")
+                    ?? user.FindFirstValue(ClaimTypes.NameIdentifier) 
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new GetConversationQuery(bookingId, requesterId));
                 return Results.Ok(result);
             })
             .WithName("GetConversation")
+            .WithTags("Chat")
+            .RequireAuthorization();
+
+            app.MapGet("/api/chat/inbox", async (IMediator mediator, ClaimsPrincipal user) =>
+            {
+                var userId = Guid.Parse(user.FindFirstValue("profileId")
+                    ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
+                    ?? throw new UnauthorizedAccessException("Invalid token."));
+                var result = await mediator.Send(new GetInboxQuery(userId));
+                return Results.Ok(result);
+            })
+            .WithName("GetInbox")
             .WithTags("Chat")
             .RequireAuthorization();
 
@@ -34,9 +50,11 @@ public class ChatEndpoint : IEndpointGroup
             .WithTags("Chat")
             .RequireAuthorization();
 
-        app.MapPost("/api/chat/{bookingId:guid}/messages", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId, SendMessageBody body) =>
+            app.MapPost("/api/chat/{bookingId:guid}/messages", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId, SendMessageBody body) =>
             {
-                var senderId = Guid.Parse(user.FindFirstValue("sub")
+                var senderId = Guid.Parse(user.FindFirstValue("profileId")
+                    ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new SendMessageCommand(
                     bookingId,
@@ -49,9 +67,11 @@ public class ChatEndpoint : IEndpointGroup
             .WithTags("Chat")
             .RequireAuthorization();
 
-        app.MapPatch("/api/chat/{bookingId:guid}/messages/read", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId) =>
+            app.MapPatch("/api/chat/{bookingId:guid}/messages/read", async (IMediator mediator, ClaimsPrincipal user, Guid bookingId) =>
             {
-                var recipientId = Guid.Parse(user.FindFirstValue("sub")
+                var recipientId = Guid.Parse(user.FindFirstValue("profileId")
+                    ?? user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("sub")
                     ?? throw new UnauthorizedAccessException("Invalid token."));
                 await mediator.Send(new MarkMessagesReadCommand(bookingId, recipientId));
                 return Results.NoContent();

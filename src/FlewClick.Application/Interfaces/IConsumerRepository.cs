@@ -6,6 +6,7 @@ public interface IConsumerRepository
 {
     Task<Consumer?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Consumer?> GetByPhoneAsync(string phone, CancellationToken ct = default);
+    Task<Consumer?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task AddAsync(Consumer consumer, CancellationToken ct = default);
     Task UpdateAsync(Consumer consumer, CancellationToken ct = default);
 }

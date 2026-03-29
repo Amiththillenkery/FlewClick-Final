@@ -13,6 +13,12 @@ public class ConversationRepository(FlewClickDbContext context) : IConversationR
     public async Task<Conversation?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await context.Conversations.FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public async Task<List<Conversation>> GetByUserIdAsync(Guid userId, CancellationToken ct = default) =>
+        await context.Conversations
+            .Where(c => c.ConsumerId == userId || c.ProfessionalProfileId == userId)
+            .OrderByDescending(c => c.CreatedAtUtc)
+            .ToListAsync(ct);
+
     public async Task AddAsync(Conversation conversation, CancellationToken ct = default)
     {
         await context.Conversations.AddAsync(conversation, ct);

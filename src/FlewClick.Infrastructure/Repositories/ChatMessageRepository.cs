@@ -26,6 +26,12 @@ public class ChatMessageRepository(FlewClickDbContext context) : IChatMessageRep
             m => m.ConversationId == conversationId && m.SenderId != recipientId && !m.IsRead,
             ct);
 
+    public async Task<ChatMessage?> GetLastMessageAsync(Guid conversationId, CancellationToken ct = default) =>
+        await context.ChatMessages
+            .Where(m => m.ConversationId == conversationId)
+            .OrderByDescending(m => m.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
     public async Task AddAsync(ChatMessage message, CancellationToken ct = default)
     {
         await context.ChatMessages.AddAsync(message, ct);

@@ -42,7 +42,7 @@ public class ProfessionalAuthEndpoint : IEndpointGroup
             {
                 var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
                     ?? user.FindFirstValue("sub")
-                    ?? throw new UnauthorizedAccessException());
+                    ?? throw new UnauthorizedAccessException("Invalid token."));
                 var result = await mediator.Send(new GetProfessionalProfileQuery(userId));
                 return Results.Ok(result);
             })

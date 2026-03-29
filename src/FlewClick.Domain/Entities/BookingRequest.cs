@@ -100,6 +100,9 @@ public class BookingRequest : Entity
     {
         if (TerminalStatuses.Contains(Status))
             throw new DomainException($"Cannot cancel a booking that is already '{Status}'.");
+        if (Status == BookingStatus.Accepted || Status == BookingStatus.Active)
+            throw new DomainException($"Cannot cancel an order once the agreement is accepted ({Status}). Payment must be processed.");
+
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException("Cancellation reason is required.");
 

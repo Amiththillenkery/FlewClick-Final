@@ -30,6 +30,26 @@ public class JwtService(IConfiguration configuration) : IJwtService
         return BuildToken(claims, expirationMinutes);
     }
 
+    public string GenerateConsumerAccessToken(Guid consumerId, string phone, string name, string? email)
+    {
+        var expirationMinutes = int.Parse(
+            configuration["Jwt:AccessTokenExpirationMinutes"] ?? "15");
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, consumerId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("phone", phone),
+            new("name", name),
+            new("user_type", "Consumer")
+        };
+
+        if (!string.IsNullOrEmpty(email))
+            claims.Add(new Claim(JwtRegisteredClaimNames.Email, email));
+
+        return BuildToken(claims, expirationMinutes);
+    }
+
     public string GenerateProfessionalToken(
         Guid userId, Guid profileId, string email, string name, List<ProfessionalRole> roles)
     {

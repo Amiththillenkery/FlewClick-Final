@@ -23,8 +23,11 @@ public class ChatHub(IMediator mediator) : Hub
     public async Task SendMessage(Guid bookingRequestId, string content)
     {
         var userId = GetUserId();
+        var isProfessional = Context.User?.HasClaim(c => c.Type == "profileId") ?? false;
+        var senderType = isProfessional ? MessageSenderType.Professional : MessageSenderType.Consumer;
+
         var result = await mediator.Send(new SendMessageCommand(
-            bookingRequestId, userId, MessageSenderType.Consumer, content));
+            bookingRequestId, userId, senderType, content));
 
         await Clients.Group(bookingRequestId.ToString()).SendAsync("ReceiveMessage", result);
     }
@@ -37,7 +40,9 @@ public class ChatHub(IMediator mediator) : Hub
 
     private Guid GetUserId()
     {
-        var sub = Context.User?.FindFirstValue("sub")
+        var sub = Context.User?.FindFirstValue("profileId")
+            ?? Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? Context.User?.FindFirstValue("sub")
             ?? throw new HubException("Invalid token.");
         return Guid.Parse(sub);
     }

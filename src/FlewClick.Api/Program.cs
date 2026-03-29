@@ -5,6 +5,7 @@ using FlewClick.Application;
 using FlewClick.Domain.Exceptions;
 using FlewClick.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,9 +45,10 @@ builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true) // Allow any origin but return it in headers (required for credentials)
               .AllowAnyMethod()
-              .AllowAnyHeader());
+              .AllowAnyHeader()
+              .AllowCredentials());
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -96,6 +98,11 @@ app.UseExceptionHandler(exceptionHandlerApp =>
                 details = validation.Errors.Select(e => new { e.PropertyName, e.ErrorMessage })
             });
         }
+        else if (exception is UnauthorizedAccessException authEx)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsJsonAsync(new { error = authEx.Message });
+        }
         else
         {
             context.Response.StatusCode = 500;
@@ -107,5 +114,33 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 app.MapHealthChecks("/healthz");
 app.MapEndpointGroups();
 app.MapHub<ChatHub>("/hubs/chat");
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<FlewClick.Infrastructure.Persistence.FlewClickDbContext>();
+    var acceptedStatuses = new[] { 
+        FlewClick.Domain.Enums.BookingStatus.PendingQuotation, 
+        FlewClick.Domain.Enums.BookingStatus.QuotationSent, 
+        FlewClick.Domain.Enums.BookingStatus.RevisionRequested, 
+        FlewClick.Domain.Enums.BookingStatus.Accepted, 
+        FlewClick.Domain.Enums.BookingStatus.Active, 
+        FlewClick.Domain.Enums.BookingStatus.Completed 
+    };
+
+    var bookings = await dbContext.BookingRequests
+        .Where(b => acceptedStatuses.Contains(b.Status))
+        .ToListAsync();
+
+    foreach (var b in bookings)
+    {
+        var exists = await dbContext.Conversations.AnyAsync(c => c.BookingRequestId == b.Id);
+        if (!exists)
+        {
+            var conv = FlewClick.Domain.Entities.Conversation.Create(b.Id, b.ConsumerId, b.ProfessionalProfileId);
+            await dbContext.Conversations.AddAsync(conv);
+        }
+    }
+    await dbContext.SaveChangesAsync();
+}
 
 app.Run();

@@ -413,6 +413,7 @@ public class FlewClickDbContext : DbContext
             entity.Property(e => e.Phone).HasColumnName("phone").HasMaxLength(20).IsRequired();
             entity.Property(e => e.FullName).HasColumnName("full_name").HasMaxLength(150).IsRequired();
             entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(254);
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").HasMaxLength(500);
             entity.Property(e => e.IsPhoneVerified).HasColumnName("is_phone_verified");
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
