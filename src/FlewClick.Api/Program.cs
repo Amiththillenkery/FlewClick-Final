@@ -115,8 +115,9 @@ app.MapHealthChecks("/healthz");
 app.MapEndpointGroups();
 app.MapHub<AppHub>("/hubs/app");
 
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<FlewClick.Infrastructure.Persistence.FlewClickDbContext>();
     var acceptedStatuses = new[] { 
         FlewClick.Domain.Enums.BookingStatus.PendingQuotation, 
@@ -141,6 +142,10 @@ using (var scope = app.Services.CreateScope())
         }
     }
     await dbContext.SaveChangesAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Startup conversation seeding failed — will retry on next restart");
 }
 
 app.Run();
