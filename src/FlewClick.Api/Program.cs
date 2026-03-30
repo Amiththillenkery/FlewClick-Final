@@ -1,6 +1,6 @@
 using System.Text;
 using FlewClick.Api.Endpoints;
-using FlewClick.Api.Hubs;
+using FlewClick.Infrastructure.Hubs;
 using FlewClick.Application;
 using FlewClick.Domain.Exceptions;
 using FlewClick.Infrastructure;
@@ -113,7 +113,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
 app.MapHealthChecks("/healthz");
 app.MapEndpointGroups();
-app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<AppHub>("/hubs/app");
 
 using (var scope = app.Services.CreateScope())
 {

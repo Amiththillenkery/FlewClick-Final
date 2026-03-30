@@ -25,7 +25,8 @@ public class CompleteBookingHandler(
     IAgreementRepository agreementRepository,
     IPlatformFeePaymentRepository platformFeePaymentRepository,
     IProfessionalProfileRepository profileRepository,
-    IAppUserRepository userRepository)
+    IAppUserRepository userRepository,
+    INotificationService notificationService)
     : IRequestHandler<CompleteBookingCommand, BookingDto>
 {
     public async Task<BookingDto> Handle(CompleteBookingCommand request, CancellationToken ct)
@@ -73,6 +74,14 @@ public class CompleteBookingHandler(
             changedByType: MessageSenderType.Professional);
 
         await historyRepository.AddAsync(history, ct);
+
+        await notificationService.NotifyBookingUpdatedAsync(
+            booking.Id, 
+            booking.ConsumerId, 
+            booking.ProfessionalProfileId,
+            booking.Status, 
+            "Project marked as completed by professional", 
+            ct);
 
         return BookingMapper.ToDto(booking);
     }

@@ -5,19 +5,27 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-namespace FlewClick.Api.Hubs;
+namespace FlewClick.Infrastructure.Hubs;
 
 [Authorize]
-public class ChatHub(IMediator mediator) : Hub
+public class AppHub(IMediator mediator) : Hub
 {
-    public async Task JoinConversation(string conversationId)
+    public override async Task OnConnectedAsync()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
+        var userId = GetUserId();
+        // Join a personal room for private notifications (like "New Booking Request")
+        await Groups.AddToGroupAsync(Context.ConnectionId, userId.ToString());
+        await base.OnConnectedAsync();
     }
 
-    public async Task LeaveConversation(string conversationId)
+    public async Task JoinProject(string bookingId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, bookingId);
+    }
+
+    public async Task LeaveProject(string bookingId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, bookingId);
     }
 
     public async Task SendMessage(Guid bookingRequestId, string content)
@@ -26,16 +34,14 @@ public class ChatHub(IMediator mediator) : Hub
         var isProfessional = Context.User?.HasClaim(c => c.Type == "profileId") ?? false;
         var senderType = isProfessional ? MessageSenderType.Professional : MessageSenderType.Consumer;
 
-        var result = await mediator.Send(new SendMessageCommand(
+        await mediator.Send(new SendMessageCommand(
             bookingRequestId, userId, senderType, content));
-
-        await Clients.Group(bookingRequestId.ToString()).SendAsync("ReceiveMessage", result);
     }
 
-    public async Task TypingIndicator(string conversationId)
+    public async Task TypingIndicator(string bookingId)
     {
         var userId = GetUserId();
-        await Clients.OthersInGroup(conversationId).SendAsync("UserTyping", userId);
+        await Clients.OthersInGroup(bookingId).SendAsync("UserTyping", userId);
     }
 
     private Guid GetUserId()

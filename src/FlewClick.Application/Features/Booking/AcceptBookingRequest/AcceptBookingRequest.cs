@@ -25,7 +25,8 @@ public class AcceptBookingRequestHandler(
     IBookingStatusHistoryRepository historyRepository,
     IProfessionalProfileRepository profileRepository,
     IAppUserRepository userRepository,
-    IConversationRepository conversationRepository)
+    IConversationRepository conversationRepository,
+    INotificationService notificationService)
     : IRequestHandler<AcceptBookingRequestCommand, BookingDto>
 {
     public async Task<BookingDto> Handle(AcceptBookingRequestCommand request, CancellationToken ct)
@@ -58,6 +59,14 @@ public class AcceptBookingRequestHandler(
         await historyRepository.AddAsync(history, ct);
 
         await EnsureConversationAsync(booking, ct);
+
+        await notificationService.NotifyBookingUpdatedAsync(
+            booking.Id, 
+            booking.ConsumerId, 
+            booking.ProfessionalProfileId,
+            booking.Status, 
+            "Booking accepted by professional", 
+            ct);
 
         return BookingMapper.ToDto(booking);
     }

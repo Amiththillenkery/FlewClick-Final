@@ -48,7 +48,8 @@ public class CreateAgreementHandler(
     IAgreementRepository agreementRepository,
     IAgreementDeliverableRepository deliverableRepository,
     IBookingStatusHistoryRepository historyRepository,
-    IConversationRepository conversationRepository)
+    IConversationRepository conversationRepository,
+    INotificationService notificationService)
     : IRequestHandler<CreateAgreementCommand, AgreementDto>
 {
     public async Task<AgreementDto> Handle(CreateAgreementCommand request, CancellationToken ct)
@@ -108,6 +109,14 @@ public class CreateAgreementHandler(
             booking.ProfessionalProfileId.ToString(),
             MessageSenderType.Professional);
         await historyRepository.AddAsync(history, ct);
+
+        await notificationService.NotifyBookingUpdatedAsync(
+            booking.Id, 
+            booking.ConsumerId, 
+            booking.ProfessionalProfileId,
+            booking.Status, 
+            "New quotation received", 
+            ct);
 
         var loadedDeliverables = await deliverableRepository.GetByAgreementIdAsync(agreement.Id, ct);
         var deliverableDtos = loadedDeliverables.ConvertAll(AgreementMapper.ToDto);

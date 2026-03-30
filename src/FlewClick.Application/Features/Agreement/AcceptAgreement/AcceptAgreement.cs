@@ -23,7 +23,8 @@ public class AcceptAgreementHandler(
     IBookingRequestRepository bookingRepository,
     IAgreementRepository agreementRepository,
     IAgreementDeliverableRepository deliverableRepository,
-    IBookingStatusHistoryRepository historyRepository)
+    IBookingStatusHistoryRepository historyRepository,
+    INotificationService notificationService)
     : IRequestHandler<AcceptAgreementCommand, AgreementDto>
 {
     public async Task<AgreementDto> Handle(AcceptAgreementCommand request, CancellationToken ct)
@@ -64,6 +65,14 @@ public class AcceptAgreementHandler(
             "System",
             MessageSenderType.System);
         await historyRepository.AddAsync(activateHistory, ct);
+
+        await notificationService.NotifyBookingUpdatedAsync(
+            booking.Id, 
+            booking.ConsumerId, 
+            booking.ProfessionalProfileId, 
+            booking.Status, 
+            "Agreement accepted by consumer. Project is now active.", 
+            ct);
 
         var deliverables = await deliverableRepository.GetByAgreementIdAsync(agreement.Id, ct);
         var deliverableDtos = deliverables.ConvertAll(AgreementMapper.ToDto);

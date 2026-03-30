@@ -34,7 +34,8 @@ public class CreateBookingRequestHandler(
     IProfessionalProfileRepository profileRepository,
     IPackageRepository packageRepository,
     IBookingRequestRepository bookingRepository,
-    IBookingStatusHistoryRepository historyRepository)
+    IBookingStatusHistoryRepository historyRepository,
+    INotificationService notificationService)
     : IRequestHandler<CreateBookingRequestCommand, BookingDto>
 {
     public async Task<BookingDto> Handle(CreateBookingRequestCommand request, CancellationToken ct)
@@ -72,6 +73,12 @@ public class CreateBookingRequestHandler(
             changedByType: MessageSenderType.Consumer);
 
         await historyRepository.AddAsync(history, ct);
+
+        await notificationService.NotifyNewBookingRequestAsync(
+            booking.ProfessionalProfileId, 
+            booking.Id, 
+            consumer.FullName, 
+            ct);
 
         return BookingMapper.ToDto(booking);
     }

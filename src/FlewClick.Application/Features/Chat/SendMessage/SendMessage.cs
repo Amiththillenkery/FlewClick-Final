@@ -26,7 +26,8 @@ public class SendMessageValidator : AbstractValidator<SendMessageCommand>
 
 public class SendMessageHandler(
     IConversationRepository conversationRepository,
-    IChatMessageRepository chatMessageRepository)
+    IChatMessageRepository chatMessageRepository,
+    INotificationService notificationService)
     : IRequestHandler<SendMessageCommand, ChatMessageDto>
 {
     public async Task<ChatMessageDto> Handle(SendMessageCommand request, CancellationToken ct)
@@ -42,7 +43,15 @@ public class SendMessageHandler(
         var message = ChatMessage.Create(conversation.Id, request.SenderId, request.SenderType, request.Content);
         await chatMessageRepository.AddAsync(message, ct);
 
-        return ChatMapper.ToDto(message);
+        var dto = ChatMapper.ToDto(message);
+
+        await notificationService.NotifyNewMessageAsync(
+            conversation.ConsumerId,
+            conversation.ProfessionalProfileId,
+            dto,
+            ct);
+
+        return dto;
     }
 
     private static void ValidateSender(Conversation conversation, Guid senderId, MessageSenderType senderType)

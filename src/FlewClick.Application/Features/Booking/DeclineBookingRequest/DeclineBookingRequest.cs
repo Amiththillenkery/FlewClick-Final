@@ -25,7 +25,8 @@ public class DeclineBookingRequestHandler(
     IBookingRequestRepository bookingRepository,
     IBookingStatusHistoryRepository historyRepository,
     IProfessionalProfileRepository profileRepository,
-    IAppUserRepository userRepository)
+    IAppUserRepository userRepository,
+    INotificationService notificationService)
     : IRequestHandler<DeclineBookingRequestCommand, BookingDto>
 {
     public async Task<BookingDto> Handle(DeclineBookingRequestCommand request, CancellationToken ct)
@@ -54,6 +55,14 @@ public class DeclineBookingRequestHandler(
             reason: request.Reason);
 
         await historyRepository.AddAsync(history, ct);
+
+        await notificationService.NotifyBookingUpdatedAsync(
+            booking.Id, 
+            booking.ConsumerId, 
+            booking.ProfessionalProfileId,
+            booking.Status, 
+            $"Booking declined: {request.Reason}", 
+            ct);
 
         return BookingMapper.ToDto(booking);
     }
