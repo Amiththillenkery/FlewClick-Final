@@ -10,17 +10,17 @@ public class InstagramWebhookEndpoint : IEndpointGroup
         app.MapGet("/api/portfolio/instagram/webhook", async (
                 IMediator mediator,
                 IConfiguration config,
-                string? hub_mode,
-                string? hub_verify_token,
-                string? hub_challenge) =>
+                [Microsoft.AspNetCore.Mvc.FromQuery(Name = "hub.mode")] string? hubMode,
+                [Microsoft.AspNetCore.Mvc.FromQuery(Name = "hub.verify_token")] string? hubVerifyToken,
+                [Microsoft.AspNetCore.Mvc.FromQuery(Name = "hub.challenge")] string? hubChallenge) =>
             {
-                if (hub_mode is null || hub_verify_token is null || hub_challenge is null)
+                if (hubMode is null || hubVerifyToken is null || hubChallenge is null)
                     return Results.BadRequest("Missing required parameters.");
 
                 var configuredToken = config["Instagram:VerifyToken"] ?? string.Empty;
 
                 var result = await mediator.Send(new HandleWebhookVerificationQuery(
-                    hub_mode, hub_verify_token, hub_challenge, configuredToken));
+                    hubMode, hubVerifyToken, hubChallenge, configuredToken));
 
                 return result is not null
                     ? Results.Text(result)
