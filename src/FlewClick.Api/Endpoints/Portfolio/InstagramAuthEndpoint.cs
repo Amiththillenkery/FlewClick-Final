@@ -19,13 +19,16 @@ public class InstagramAuthEndpoint : IEndpointGroup
             .Produces<InitiateInstagramAuthResponse>()
             .Produces(400);
 
-        app.MapGet("/api/portfolio/instagram/callback", async (IMediator mediator, string code, string state) =>
+        app.MapGet("/api/portfolio/instagram/callback", async (IMediator mediator, IConfiguration config, string code, string state) =>
             {
                 if (!Guid.TryParse(state, out var profileId))
                     return Results.BadRequest("Invalid state parameter.");
 
-                var result = await mediator.Send(new CompleteInstagramAuthCommand(code, profileId));
-                return Results.Ok(result);
+                await mediator.Send(new CompleteInstagramAuthCommand(code, profileId));
+                
+                // Get the frontend URL from config, fallback to localhost
+                var frontendUrl = config["FrontendUrl"] ?? "http://localhost:5173";
+                return Results.Redirect($"{frontendUrl}/professional/profile?instagram_connected=true");
             })
             .WithName("CompleteInstagramAuth")
             .WithTags("Portfolio - Instagram")
